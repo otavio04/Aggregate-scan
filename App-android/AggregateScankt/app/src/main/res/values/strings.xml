@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">Aggregate Scan kt</string>
+
+    <string name="open_camera">Open Camera</string>
+    <string name="photo_camera">Capture</string>
+    <string name="splash_screen">Aggregate Scan</string>
+    <string name="main_name">Aggregate Scan</string>
+
+    <string name="take_photo">Take Photo</string>
+    <string name="str_folder">Folder</string>
+    <string name="str_connect">Connect</string>
+    <string name="str_about">About</string>
+
+</resources>

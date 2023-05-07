@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DesignSurface">
+    <option name="filePathToZoomLevelMap">
+      <map>
+        <entry key="..\:/Android_Studio/Android_apps/AggregateScankt/app/src/main/res/drawable/ic_baseline_save_24.xml" value="0.1" />
+        <entry key="..\:/Android_Studio/Android_apps/AggregateScankt/app/src/main/res/drawable/round_btn.xml" value="0.1" />
+        <entry key="..\:/Android_Studio/Android_apps/AggregateScankt/app/src/main/res/layout/activity_main.xml" value="0.25416666666666665" />
+        <entry key="..\:/Android_Studio/Android_apps/AggregateScankt/app/src/main/res/layout/activity_main2.xml" value="0.25416666666666665" />
+        <entry key="..\:/Android_Studio/Android_apps/AggregateScankt/app/src/main/res/layout/folder_name.xml" value="0.25416666666666665" />
+        <entry key="..\:/Android_Studio/Android_apps/AggregateScankt/app/src/main/res/layout/paired_devices.xml" value="0.25416666666666665" />
+      </map>
+    </option>
+  </component>
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" default="true" project-jdk-name="11" project-jdk-type="JavaSDK">
+    <output url="file://$PROJECT_DIR$/build/classes" />
+  </component>
+  <component name="ProjectType">
+    <option name="id" value="Android" />
+  </component>
+</project>
