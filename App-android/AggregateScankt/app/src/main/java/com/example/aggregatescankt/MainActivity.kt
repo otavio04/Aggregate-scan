@@ -214,7 +214,7 @@ class MainActivity : AppCompatActivity() {
 
         val message = messageToArduino.toByteArray()
 
-//        Log.i("Test_info: ", message.toString(Charsets.UTF_8))
+        Log.i("Test_info: ", message.toString(Charsets.UTF_8))
 
         connectedThread.write(message)
     }

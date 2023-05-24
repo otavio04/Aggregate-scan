@@ -305,8 +305,10 @@ void start_motor(){
   digitalWrite(inm, LOW);
 
   while(1){ 
+    Serial.println("No while 1");
 
     if(digitalRead(encoder)){
+      Serial.println("Encoder lido");
       picture();   
       lcd.clear();
       lcd.setCursor(0, 0);
@@ -314,6 +316,7 @@ void start_motor(){
       count++;
 
       if(count > 21){
+        Serial.println("Terminou");
         digitalWrite(in1, HIGH);
         digitalWrite(in2, HIGH);
         digitalWrite(in3, HIGH);
@@ -340,6 +343,7 @@ void start_motor(){
       oneStep(1);
       delay(10);      
     }else{
+      Serial.println("Encoder não lido");
       oneStep(1);
       delay(10); 
     }
@@ -356,13 +360,17 @@ void picture(){
     digitalWrite(inm, HIGH);
     delay(1000);
     bth.println("{xis}");
+    Serial.println("Tirou foto");
     String camera = "";
     while(1){
       if(bth.available()){
         for(int i = 0; i < bth.available(); i++){
           camera += bth.readString();
         }
-        if(camera.equals("taken")) break;
+        if(camera.equals("taken")){
+          Serial.println("Retorno do celular - seguir para proxima foto");
+          break;
+        }
       }
     }
     digitalWrite(inm, LOW);    
@@ -398,6 +406,8 @@ String bth_test(){
     delay(1);
 
   }
+
+  Serial.print(status);
 
   return status;
 }
