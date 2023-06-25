@@ -89,6 +89,7 @@ def main_array_sorted(new_x, new_y, new_z, p):
 
     return l
 
+#calculate the convex hull to find angularity
 def convexH(separated_arrays):
     hull_list = []
     for i in separated_arrays:
