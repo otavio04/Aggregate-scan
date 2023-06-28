@@ -196,7 +196,7 @@ class MainClass(object):
 		image_pil = Image.fromarray(cv2.cvtColor(img_copy, cv2.COLOR_BGR2RGB))
 			
 		photo = ImageTk.PhotoImage(image_pil)
-		self.canvas.delete('img')
+		self.canvas.delete('all')
 		self.canvas.photo = photo
 		self.canvas.create_image(0, 0, anchor="nw", image=photo, tag='img')
 	
