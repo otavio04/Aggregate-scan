@@ -4,8 +4,16 @@ from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
 import numpy as np
+from PIL import ImageTk, Image
+import sys
 
 class MainClass(object):
+
+	p = 1.0
+	x1 = 0
+	y1 = 0
+	x2 = 0
+	y2 = 0
 
 	def __init__(self):
 
@@ -15,26 +23,57 @@ class MainClass(object):
 		fonte_txt	= ('calibri', 9)
 		fonte_enfas	= ('calibri', 9, "bold")
 
+		self.path_folder_get = ""
+		self.path_folder_save = ""
+
+		self.imgs = []
+		self.cropped_imgs = []
+		self.edited_imgs = []
+
 		self.root = Tk()
 		self.root.title('Background remove tool')
 		self.root.configure(bg = cor_bg)
 
-		self.name_get = Label(self.root, text = "Escolha uma pasta com imagens", bg = cor_bg)
-		self.entry_get = Entry(self.root, width = 100)
+		self.fCanvas = LabelFrame(self.root, text="First Image of Chosen Folder", bg = cor_bg)
+		self.fCommands = LabelFrame(self.root, text="Commands", bg = cor_bg)
 
-		self.name_save = Label(self.root, text = "Escolha uma pasta para salvar as novas imagens", bg = cor_bg)
-		self.entry_save = Entry(self.root, width = 100)
+		self.canvas = Canvas(self.fCanvas, width = 600, height = 400, bg = cor_fg)
 
-		self.button_process = Button(self.root, text = "Processar", width = 20, cursor='hand2', command = self.processar)
+		self.name_get = Label(self.fCommands, text = "Escolha uma pasta com imagens", bg = cor_bg)
+		self.entry_get = Entry(self.fCommands, width = 120)
 
-		self.name_get.grid(row = 0, column = 0)
-		self.entry_get.grid(row = 1, column = 0)
-		self.name_save.grid(row = 2, column = 0)
-		self.entry_save.grid(row = 3, column = 0)
-		self.button_process.grid(row = 4, column = 0)
+		self.name_save = Label(self.fCommands, text = "Escolha uma pasta para salvar as novas imagens", bg = cor_bg)
+		self.entry_save = Entry(self.fCommands, width = 120)
 
-		self.entry_get.insert(0, "C:/Users/Otavio/Desktop/teste_3D/i")
-		self.entry_save.insert(0, "C:/Users/Otavio/Desktop/teste_3D/i_")
+		self.button_load = Button(self.fCommands, text = "Load Photos", width = 20, cursor='hand2', command = self.load)
+		self.button_process = Button(self.fCommands, text = "Process", width = 20, cursor='hand2', command = self.processar)
+		self.button_save = Button(self.fCommands, text = "Save", width = 20, cursor='hand2', command = self.save)
+		self.button_reset = Button(self.fCommands, text = "Reset", fg="red", width = 20, cursor='hand2', command = self.reset)
+
+		self.fCanvas.grid(row = 0, column = 0, sticky="N")
+		self.fCommands.grid(row = 0, column = 1, sticky="N")
+
+		self.canvas.pack()
+
+		self.name_get.grid(row = 0, column = 0, pady=5, columnspan=5, sticky="W")
+		self.entry_get.grid(row = 1, column = 0, pady=5, columnspan=5)
+		self.name_save.grid(row = 2, column = 0, pady=5, columnspan=5, sticky="W")
+		self.entry_save.grid(row = 3, column = 0, pady=5, columnspan=5)
+		self.button_load.grid(row = 4, column = 0, padx=5, pady=5)
+		self.button_process.grid(row = 4, column = 1, padx=5, pady=5)
+		self.button_save.grid(row = 4, column = 2, padx=5, pady=5)
+		self.button_reset.grid(row = 4, column = 3, padx=5, pady=5)
+
+		self.canvas.bind("<Button-1>", self.plot_point)  # Bind the left button click event to the plot_point function
+		self.canvas.bind("<Button-3>", self.plot_point2)  # Bind the left button click event to the plot_point function
+
+		self.entry_get.insert(0, "C:/Users/Otavio/Pictures/z")
+		self.entry_save.insert(0, "C:/Users/Otavio/Pictures/z_")
+
+		self.button_load.config(state="normal")
+		self.button_process.config(state="disabled")
+		self.button_save.config(state="disabled")
+		self.button_reset.config(state="normal")
 
 		self.root.mainloop()
 
@@ -48,31 +87,23 @@ class MainClass(object):
 		return images
 
 	def resize(self, img):
-			width_img = int(img.shape[1])
-			height_img = int(img.shape[0])
-			p=1.0
+		global p
+		width_img = int(img.shape[1])
+		height_img = int(img.shape[0])
 
-			w_r = self.root.winfo_width()
-			h_r = self.root.winfo_height()
-			h_fAcao = self.fAcao.winfo_reqheight()
-			h_fLim = self.fLimiares.winfo_reqheight()
+		width_canvas = self.canvas.winfo_width()
+		height_canvas = self.canvas.winfo_height()
 
-			if width_img >= height_img:
-				if(width_img >= w_r/4):
-					p = (w_r/4 - 30)/width_img
-				else:
-					p = 1.0
-			else:
-				if(height_img >= h_r - (h_fAcao + h_fLim)):
-					p = (h_r - (h_fAcao + h_fLim) - 30)/height_img
-				else:
-					p = 1.0
+		if (width_img - width_canvas) >= (height_img - height_canvas):
+			p = (width_canvas)/width_img
+		else:
+			p = (height_canvas)/height_img
 
-			width_r = int(img.shape[1]*p)
-			height_r = int(img.shape[0]*p)
-			dim = (width_r, height_r)
-			img_r = cv2.resize(img.copy(), dim)
-			return img_r
+		width_r = int(img.shape[1]*p)
+		height_r = int(img.shape[0]*p)
+		dim = (width_r, height_r)
+		img_r = cv2.resize(img.copy(), dim)
+		return img_r
 
 	def edit_images(self, imgs):
 
@@ -99,7 +130,7 @@ class MainClass(object):
 			#copiando imagem original
 			img_bgr_new = ifor.copy()
 			#aplicando mascara
-			img_bgr_new[i_seg_blur==1] = (255, 0, 0) #mudar para != para o produto final
+			img_bgr_new[i_seg_blur!=1] = (255, 0, 0) #mudar para != para o produto final
 			#adicionando ao vetor
 			processed_image.append(img_bgr_new)
 
@@ -122,20 +153,102 @@ class MainClass(object):
 		else:
 			return False
 
-	def processar(self):
-		path_folder_get = str(self.entry_get.get())
-		path_folder_save = str(self.entry_save.get())
 
-		images = self.load_images_from_folder(path_folder_get)
-		edited_images = self.edit_images(images)
-		saved = self.save_images(path_folder_save, edited_images)
+	def load(self):
+
+		self.button_load.config(state="normal")
+		self.button_process.config(state="disabled")
+		self.button_save.config(state="disabled")
+		self.button_reset.config(state="normal")
+
+		self.path_folder_get = str(self.entry_get.get())
+		self.imgs = self.load_images_from_folder(self.path_folder_get)
+
+		img_copy = self.resize(self.imgs[0].copy())
+
+		image_pil = Image.fromarray(cv2.cvtColor(img_copy, cv2.COLOR_BGR2RGB))
+			
+		photo = ImageTk.PhotoImage(image_pil)
+		self.canvas.photo = photo
+		self.canvas.create_image(0, 0, anchor="nw", image=photo, tag='img')
+		
+	def processar(self):
+
+		self.button_load.config(state="disabled")
+		self.button_process.config(state="disabled")
+		self.button_save.config(state="normal")
+		self.button_reset.config(state="normal")
+
+		global x1, y1, x2, y2, p
+		i_x1 = int(x1*(1/p))
+		i_y1 = int(y1*(1/p))
+		i_x2 = int(x2*(1/p))
+		i_y2 = int(y2*(1/p))
+
+		for i in range(len(self.imgs)):
+			img = self.imgs[i]
+			self.cropped_imgs.append(img[i_y1:i_y2, i_x1:i_x2])
+
+		self.edited_imgs = self.edit_images(self.cropped_imgs)
+		
+		img_copy = self.resize(self.edited_imgs[0].copy())
+
+		image_pil = Image.fromarray(cv2.cvtColor(img_copy, cv2.COLOR_BGR2RGB))
+			
+		photo = ImageTk.PhotoImage(image_pil)
+		self.canvas.delete('img')
+		self.canvas.photo = photo
+		self.canvas.create_image(0, 0, anchor="nw", image=photo, tag='img')
+	
+	def save(self):
+
+		self.button_load.config(state="disabled")
+		self.button_process.config(state="disabled")
+		self.button_save.config(state="disabled")
+		self.button_reset.config(state="normal")
+
+		self.path_folder_save = str(self.entry_save.get())
+
+		saved = self.save_images(self.path_folder_save, self.edited_imgs)
 
 		if saved:
-			self.button_process.config(text = "Successfully!")
+			self.button_save.config(text = "Successfully!")
 			print('\a')
 		else:
-			self.button_process.config(text = "Erro")
+			self.button_save.config(text = "Erro")
 			print('\a')
+
+	def reset(self):
+		os.execl(sys.executable, sys.executable, *sys.argv)
+
+
+	def plot_lines(self):
+
+		self.button_process.config(state="normal")
+
+		self.canvas.delete('lines')
+		self.canvas.create_line(x1, y1, x2, y1, fill = 'red', tag='lines')
+		self.canvas.create_line(x1, y1, x1, y2, fill = 'red', tag='lines')
+		self.canvas.create_line(x1, y2, x2, y2, fill = 'red', tag='lines')
+		self.canvas.create_line(x2, y1, x2, y2, fill = 'red', tag='lines')
+
+	def plot_point(self, event):
+		global x1, y1
+		x1 = event.x
+		y1 = event.y
+		self.canvas.delete('left')
+		self.canvas.create_oval(x1 - 3, y1 - 3, x1 + 3, y1 + 3, fill='yellow', tag='left')  # Plot a small oval at the clicked coordinates
+		if(self.canvas.find_withtag('right')):
+			self.plot_lines()
+
+	def plot_point2(self, event):
+		global x2, y2
+		x2 = event.x
+		y2 = event.y
+		self.canvas.delete('right')
+		self.canvas.create_oval(x2 - 3, y2 - 3, x2 + 3, y2 + 3, fill='yellow', tag='right')  # Plot a small oval at the clicked coordinates
+		if(self.canvas.find_withtag('left')):
+			self.plot_lines()
 
 
 if __name__ == '__main__':
