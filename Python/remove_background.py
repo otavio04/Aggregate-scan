@@ -37,7 +37,7 @@ class MainClass(object):
 		self.fCanvas = LabelFrame(self.root, text="First Image of Chosen Folder", bg = cor_bg)
 		self.fCommands = LabelFrame(self.root, text="Commands", bg = cor_bg)
 
-		self.canvas = Canvas(self.fCanvas, width = 600, height = 400, bg = cor_fg)
+		self.canvas = Canvas(self.fCanvas, width = 600, height = 400, bg = cor_fg, cursor='crosshair')
 
 		self.name_get = Label(self.fCommands, text = "Escolha uma pasta com imagens", bg = cor_bg)
 		self.entry_get = Entry(self.fCommands, width = 120)
