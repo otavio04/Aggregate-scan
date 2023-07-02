@@ -207,7 +207,15 @@ class MainClass(object):
 		self.button_save.config(state="disabled")
 		self.button_reset.config(state="normal")
 
-		self.path_folder_save = str(self.entry_save.get())
+		# self.path_folder_save = str(self.entry_save.get())
+		blue_folder = self.path_folder_get + "/blue"
+		# green_folder = self.path_folder_get + "/green"
+		# png_folder = self.path_folder_get + "/png"
+
+		if not os.path.exists(blue_folder):
+			os.mkdir(blue_folder)
+
+		self.path_folder_save = blue_folder
 
 		saved = self.save_images(self.path_folder_save, self.edited_imgs)
 
