@@ -325,6 +325,7 @@ void start_motor(){
 
         bt_tag = 1;
         home_screen();
+        buzzer(1000, 1000, 2);
         break;
       }
 

@@ -8,7 +8,7 @@ from scipy.spatial import ConvexHull
 
 #Getting data
 def getting_data():
-    example = o3d.io.read_point_cloud('C:/imgs_test_aggegate_scan/seixo3/3dzephyr/Textured_mesh_2.ply')
+    example = o3d.io.read_point_cloud('C:/imgs_test_aggegate_scan/usaveis_sem_escala/seixo3/3dzephyr/Textured_mesh_2.ply')
     pts = np.asarray(example.points)
 
     return pts
