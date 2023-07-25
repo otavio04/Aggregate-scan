@@ -93,13 +93,11 @@ def main_array_sorted(new_x, new_y, new_z, p):
 def convexH(separated_arrays):
     hull_list = []
     for i in separated_arrays:
-        hull = ConvexHull(i)
-        # hull_vertices = i[hull.vertices]
-        # hull_list.append(hull_vertices)
-        print(i)
-        print("=============================")
-
-    # print(separated_arrays[0])
+        hull = ConvexHull(i[0])
+        hull_list.append(hull.vertices)
+        # print(hull.vertices)
+        # print("=============================")
+    
     
     return hull_list
 
@@ -116,7 +114,7 @@ def calculate_rows_columns(num_caixas):
     return linhas, colunas
 
 #plotting images
-def plot_(new_x, new_y, new_z, p, separated_arrays, colors, rows, columns):
+def plot_(new_x, new_y, new_z, p, separated_arrays, Chull, colors, rows, columns):
     #Create a 3D scatter plot
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -131,12 +129,12 @@ def plot_(new_x, new_y, new_z, p, separated_arrays, colors, rows, columns):
     # ax.set_ylim3d([-1, 1])
     # ax.set_zlim3d([-1, 1])
 
-
     #2D image
     fig2 = plt.figure()
     for i in range(p):
         ax2 = fig2.add_subplot(rows, columns, i+1)
-        ax2.scatter(separated_arrays[i][0, :][:, 0], separated_arrays[i][0, :][:, 1])
+        ax2.scatter(separated_arrays[i][0, :][:, 0], separated_arrays[i][0, :][:, 1], color='k')
+        ax2.plot(separated_arrays[i][0][Chull[i], 0], separated_arrays[i][0][Chull[i], 1], 'r--')
         ax2.set_title(f"Slice {i+1}")
         ax2.set_xlabel("Y-axis")
         ax2.set_ylabel("Z-axis")
@@ -155,5 +153,5 @@ partitions = 10
 colors = color_array(partitions, new_x)
 separated_arrays = main_array_sorted(new_x, new_y, new_z, partitions)
 columns, rows = calculate_rows_columns(partitions)
-# convex_hull = convexH(separated_arrays)
-plot_(new_x, new_y, new_z, partitions, separated_arrays, colors, rows, columns)
+convex_hull = convexH(separated_arrays)
+plot_(new_x, new_y, new_z, partitions, separated_arrays, convex_hull, colors, rows, columns)
