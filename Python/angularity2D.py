@@ -1,4 +1,5 @@
 import os
+import sys
 import cv2
 import numpy as np
 from tkinter import *
@@ -13,6 +14,8 @@ class MainClass (object):
         cor_bg 		= "#ddddee"
         cor_fg		= "#111122"
 
+        self.resto = 5
+
         self.imgs = []
         self.binar_imgs = []
         self.sobel_images = []
@@ -22,7 +25,7 @@ class MainClass (object):
         self.angularity_of_contours = []
 
         self.root = Tk()
-        self.root.title('Background remove tool')
+        self.root.title('Angularity 2D tool')
         self.root.configure(bg = cor_bg)
 
         self.canvas = Canvas(self.root, width=600, height=400, bg=cor_fg)
@@ -34,15 +37,17 @@ class MainClass (object):
         self.bLoad = Button(self.fLoad, width=10, text='Load images', cursor='hand2', command=self.load)
         self.bSegm = Button(self.fLoad, width=10, text='Segmentation', cursor='hand2', command=lambda:self.segment(self.imgs))
         self.bAngu = Button(self.fLoad, width=10, text='Angularity', cursor='hand2', command=lambda:self.angular(self.angles_of_contours))
+        self.bReset = Button(self.fLoad, width = 10, text = "Reset", cursor='hand2', command = self.reset, fg="red")
         self.lResults = Label(self.fLoad, text='RESULTS', bg=cor_bg)
         self.lResultsData = Label(self.fLoad, text="Average: - | Standard Dev.: - | Coef. of Variation: -", bg=cor_bg)
 
-        self.ePath.grid(row=0, column=0, padx=5, pady=5, columnspan=3)
+        self.ePath.grid(row=0, column=0, padx=5, pady=5, columnspan=4)
         self.bLoad.grid(row=1, column=0, padx=5, pady=5)
         self.bSegm.grid(row=1, column=1, padx=5, pady=5)
         self.bAngu.grid(row=1, column=2, padx=5, pady=5)
-        self.lResults.grid(row=2, column=0, columnspan=3)
-        self.lResultsData.grid(row=3, column=0, columnspan=3)
+        self.bReset.grid(row=1, column=3, padx=5, pady=5)
+        self.lResults.grid(row=2, column=0, columnspan=4)
+        self.lResultsData.grid(row=3, column=0, columnspan=4)
 
         # self.ePath.insert(0, "C:/imgs_test_aggegate_scan")
         self.ePath.insert(0, "C:/imgs_test_aggegate_scan/usaveis_sem_escala/brita1/blue")
@@ -55,6 +60,8 @@ class MainClass (object):
         self.path_folder_get = str(self.ePath.get())
 
         self.imgs = self.load_images_from_folder(self.path_folder_get)
+
+        self.just_to_show = cv2.cvtColor(self.imgs[0], cv2.COLOR_BGR2RGB)
 
         img_rgb = cv2.cvtColor(self.imgs[0].copy(), cv2.COLOR_BGR2RGB)
         img_copy = self.resize(img_rgb)
@@ -107,7 +114,7 @@ class MainClass (object):
         self.angles_of_contours = sobel_angles
 
         self.canvas.delete('all')
-        img_gray = sobel_imgs[0]
+        img_gray = self.just_to_show
         img_copy = self.resize(img_gray)
         image_pil = Image.fromarray(img_copy)
         photo = ImageTk.PhotoImage(image_pil)
@@ -145,11 +152,14 @@ class MainClass (object):
             coord_yi = []
             mask = np.zeros_like(imgs[i])
 
+            count = 0
             for j in c[i][0]:
-                coord_xi.append(j[:, 0][0])
-                coord_yi.append(j[:, 1][0])
-                ga_list.append(gradient_angle[j[:, 1][0], j[:, 0][0]])
-                mask[j[:, 1][0], j[:, 0][0]] = gradient_angle_graus[j[:, 1][0], j[:, 0][0]]
+                if count%self.resto == 0:
+                    coord_xi.append(j[:, 0][0])
+                    coord_yi.append(j[:, 1][0])
+                    ga_list.append(gradient_angle[j[:, 1][0], j[:, 0][0]])
+                    mask[j[:, 1][0], j[:, 0][0]] = gradient_angle_graus[j[:, 1][0], j[:, 0][0]]
+                count = count + 1
             
             angles.append(ga_list)
 
@@ -163,11 +173,13 @@ class MainClass (object):
             xf_array = (coord_xi + np.round(cosseno*(-1)*30, 0)).astype(np.uint32)
             yf_array = (coord_yi + np.round(seno*(-1)*30, 0)).astype(np.uint32)
 
-            count = 0
             for xi, yi, xf, yf in zip(xi_array, yi_array, xf_array, yf_array):
-                if count%1 == 0:
-                    cv2.arrowedLine(mask, (xi, yi), (xf, yf), (255), 1)
-                count = count + 1
+                cv2.arrowedLine(mask, (xi, yi), (xf, yf), (255), 1)
+
+            if i == 0:
+                for xi, yi, xf, yf in zip(xi_array, yi_array, xf_array, yf_array):
+                    cv2.arrowedLine(self.just_to_show, (xi, yi), (xf, yf), (0, 0, 0), 1)
+                
 
             i_vectors.append(mask)
         
@@ -211,6 +223,9 @@ class MainClass (object):
         path = str(self.ePath.get()) + "/angularity_results.txt"
         
         np.savetxt(path, arr4, delimiter=";")
+
+    def reset(self):
+        os.execl(sys.executable, sys.executable, *sys.argv)
 
 if __name__ == '__main__':
     MainClass()
