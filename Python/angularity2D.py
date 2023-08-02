@@ -15,6 +15,11 @@ class MainClass (object):
 
         self.imgs = []
         self.binar_imgs = []
+        self.sobel_images = []
+
+        self.list_of_contours = []
+        self.angles_of_contours = []
+        self.angularity_of_contours = []
 
         self.root = Tk()
         self.root.title('Background remove tool')
@@ -28,12 +33,16 @@ class MainClass (object):
         self.ePath = Entry(self.fLoad, width=60, cursor='xterm')
         self.bLoad = Button(self.fLoad, width=10, text='Load images', cursor='hand2', command=self.load)
         self.bSegm = Button(self.fLoad, width=10, text='Segmentation', cursor='hand2', command=lambda:self.segment(self.imgs))
-        self.bAngu = Button(self.fLoad, width=10, text='Angularity', cursor='hand2', command=self.angular)
+        self.bAngu = Button(self.fLoad, width=10, text='Angularity', cursor='hand2', command=lambda:self.angular(self.angles_of_contours))
+        self.lResults = Label(self.fLoad, text='RESULTS', bg=cor_bg)
+        self.lResultsData = Label(self.fLoad, text="Average: - | Standard Dev.: - | Coef. of Variation: -", bg=cor_bg)
 
         self.ePath.grid(row=0, column=0, padx=5, pady=5, columnspan=3)
-        self.bLoad.grid(row=1, column=0, padx=5, pady=5, sticky='W')
-        self.bSegm.grid(row=1, column=1, padx=5, pady=5, sticky='W')
-        self.bAngu.grid(row=1, column=2, padx=5, pady=5, sticky='W')
+        self.bLoad.grid(row=1, column=0, padx=5, pady=5)
+        self.bSegm.grid(row=1, column=1, padx=5, pady=5)
+        self.bAngu.grid(row=1, column=2, padx=5, pady=5)
+        self.lResults.grid(row=2, column=0, columnspan=3)
+        self.lResultsData.grid(row=3, column=0, columnspan=3)
 
         # self.ePath.insert(0, "C:/imgs_test_aggegate_scan")
         self.ePath.insert(0, "C:/imgs_test_aggegate_scan/usaveis_sem_escala/brita1/blue")
@@ -46,12 +55,10 @@ class MainClass (object):
         self.path_folder_get = str(self.ePath.get())
 
         self.imgs = self.load_images_from_folder(self.path_folder_get)
-        img_copy = self.resize(self.imgs[0].copy())
 
-        # print(img_copy.dtype)
-
-        image_pil = Image.fromarray(cv2.cvtColor(img_copy, cv2.COLOR_BGR2RGB))
-
+        img_rgb = cv2.cvtColor(self.imgs[0].copy(), cv2.COLOR_BGR2RGB)
+        img_copy = self.resize(img_rgb)
+        image_pil = Image.fromarray(img_copy)
         photo = ImageTk.PhotoImage(image_pil)
         self.canvas.photo = photo
         self.canvas.create_image(0, 0, anchor="nw", image=photo, tag='img')
@@ -85,43 +92,125 @@ class MainClass (object):
 
     def segment(self, imgs):
         images = []
-        contours = []
+        kernel = np.ones((5,5),np.uint8)
         for i in imgs:
             i_lab = cv2.cvtColor(i, cv2.COLOR_BGR2LAB)
             i_b = i_lab[:, :, 2]
-            i_seg = cv2.threshold(i_b, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-            # i_seg3c = i.copy()
-            # i_seg3c[i_seg[1] == 0] = (0, 0, 0)
-            # i_seg3c[i_seg[1] == 255] = (255, 255, 255)
-            # print(i_seg3c.dtype)
+            thr, i_seg = cv2.threshold(i_b, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+            i_close = cv2.morphologyEx(i_seg, cv2.MORPH_CLOSE, kernel)
+            images.append(i_close)
 
-            c, h = cv2.findContours(i_seg[1], cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-            c2 = c[0]
-            if len(c) == 1:
-                c2 = c
-            elif len(c) > 1:
-                indice_maior_contorno = 0
-                maior_tamanho_contorno = len(c[0])
+        list_of_contours = self.contour(images)
+        sobel_imgs, sobel_angles = self.sobel_process(images, list_of_contours)
 
-                for i in range(1, len(c)):
-                    tamanho_contorno_atual = len(c[i])
-                    if tamanho_contorno_atual > maior_tamanho_contorno:
-                        maior_tamanho_contorno = tamanho_contorno_atual
-                        indice_maior_contorno = i
-                c2 = c[indice_maior_contorno]
-            
-            contours.append(c2)
+        self.sobel_images = sobel_imgs
+        self.angles_of_contours = sobel_angles
 
-            image_with_contours = i.copy()
-            cv2.drawContours(image_with_contours, c2, -1, (0, 0, 255), 2)
+        self.canvas.delete('all')
+        img_gray = sobel_imgs[0]
+        img_copy = self.resize(img_gray)
+        image_pil = Image.fromarray(img_copy)
+        photo = ImageTk.PhotoImage(image_pil)
+        self.canvas.photo = photo
+        self.canvas.create_image(0, 0, anchor="nw", image=photo, tag='img')
+
+    def contour(self, imgs):
+        contours = []
+        images = []
+
+        for i in imgs:
+            c, h = cv2.findContours(i, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+
+            contours.append(c)
+
+            image_with_contours = np.zeros_like(i)
+            cv2.drawContours(image_with_contours, c, -1, (255), 1)
             images.append(image_with_contours)
+            # np.savetxt("C:/imgs_test_aggegate_scan/gradient_angle_vs.txt", c[0][:, 0], delimiter=";")
 
-        cv2.imshow('i', images[0])
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        return contours
+        
+    def sobel_process(self, imgs, c):
+        angles = []
+        i_vectors = []
 
-    def angular(self, imgs):
-        pass
+        for i in range(len(imgs)):
+            gradient_x = cv2.Sobel(imgs[i], cv2.CV_64F, 1, 0, ksize=5)
+            gradient_y = cv2.Sobel(imgs[i], cv2.CV_64F, 0, 1, ksize=5)
+            gradient_angle = np.arctan2(gradient_y, gradient_x)
+            gradient_angle_graus = (np.round(gradient_angle*180/np.pi, 0)).astype(np.uint32)
+
+            ga_list = []
+            coord_xi = []
+            coord_yi = []
+            mask = np.zeros_like(imgs[i])
+
+            for j in c[i][0]:
+                coord_xi.append(j[:, 0][0])
+                coord_yi.append(j[:, 1][0])
+                ga_list.append(gradient_angle[j[:, 1][0], j[:, 0][0]])
+                mask[j[:, 1][0], j[:, 0][0]] = gradient_angle_graus[j[:, 1][0], j[:, 0][0]]
+            
+            angles.append(ga_list)
+
+            ga_array = np.array(ga_list)
+            xi_array = np.array(coord_xi)
+            yi_array = np.array(coord_yi)
+
+            seno = np.sin(ga_array)
+            cosseno = np.cos(ga_array)
+
+            xf_array = (coord_xi + np.round(cosseno*(-1)*30, 0)).astype(np.uint32)
+            yf_array = (coord_yi + np.round(seno*(-1)*30, 0)).astype(np.uint32)
+
+            count = 0
+            for xi, yi, xf, yf in zip(xi_array, yi_array, xf_array, yf_array):
+                if count%1 == 0:
+                    cv2.arrowedLine(mask, (xi, yi), (xf, yf), (255), 1)
+                count = count + 1
+
+            i_vectors.append(mask)
+        
+        return i_vectors, angles
+
+    def angular(self, angles):
+        angularity_values = []
+
+        for a in angles:
+            n = len(a)
+            if n < 4:
+                raise ValueError("O contorno deve ter pelo menos 4 pontos.")
+
+            angle_sum = 0.0
+            for i in range(n - 3):
+                angle_diff = abs(a[i] - a[i + 3])*180/np.pi
+                angle_sum += angle_diff
+
+            ang = (1 / ((n / 3) - 1)) * angle_sum
+            
+            angularity_values.append(ang)
+        
+        angularity_array = np.array(angularity_values)
+        self.angularity_of_contours = angularity_array.copy()
+        
+        average = np.round(np.average(angularity_array), 2)
+        standard_dev = np.round(np.std(angularity_array), 2)
+        coefv = np.round(standard_dev/average, 2)
+        
+        self.lResultsData.config(text=f"Average: {average} | Standard Dev.: {standard_dev} | Coef. of Variation: {coefv}")
+
+        self.save(angularity_array, average, standard_dev, coefv)
+
+    def save(self, angularity, aver, std, cvar):
+        arr = angularity.copy()
+        arr1 = np.append(arr, 1000)
+        arr2 = np.append(arr1, aver)
+        arr3 = np.append(arr2, std)
+        arr4 = np.append(arr3, cvar)
+
+        path = str(self.ePath.get()) + "/angularity_results.txt"
+        
+        np.savetxt(path, arr4, delimiter=";")
 
 if __name__ == '__main__':
     MainClass()
