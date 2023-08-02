@@ -50,7 +50,7 @@ class MainClass (object):
         self.lResultsData.grid(row=3, column=0, columnspan=4)
 
         # self.ePath.insert(0, "C:/imgs_test_aggegate_scan")
-        self.ePath.insert(0, "C:/imgs_test_aggegate_scan/usaveis_sem_escala/brita1/blue")
+        self.ePath.insert(0, "C:/imgs_test_aggegate_scan/usaveis_sem_escala/super_flat/blue")
 
         self.root.mainloop()
 
@@ -114,8 +114,8 @@ class MainClass (object):
         self.angles_of_contours = sobel_angles
 
         self.canvas.delete('all')
-        img_gray = self.just_to_show
-        img_copy = self.resize(img_gray)
+        img_show = self.just_to_show
+        img_copy = self.resize(img_show)
         image_pil = Image.fromarray(img_copy)
         photo = ImageTk.PhotoImage(image_pil)
         self.canvas.photo = photo
@@ -128,12 +128,15 @@ class MainClass (object):
         for i in imgs:
             c, h = cv2.findContours(i, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
-            contours.append(c)
+            c_maior = self.maior(c)
+            contours.append(c_maior)
 
             image_with_contours = np.zeros_like(i)
-            cv2.drawContours(image_with_contours, c, -1, (255), 1)
+            cv2.drawContours(image_with_contours, c_maior, -1, (255), 1)
             images.append(image_with_contours)
             # np.savetxt("C:/imgs_test_aggegate_scan/gradient_angle_vs.txt", c[0][:, 0], delimiter=";")
+
+        print('---------------------------')
 
         return contours
         
@@ -153,7 +156,7 @@ class MainClass (object):
             mask = np.zeros_like(imgs[i])
 
             count = 0
-            for j in c[i][0]:
+            for j in c[i]:
                 if count%self.resto == 0:
                     coord_xi.append(j[:, 0][0])
                     coord_yi.append(j[:, 1][0])
@@ -195,10 +198,10 @@ class MainClass (object):
 
             angle_sum = 0.0
             for i in range(n - 3):
-                angle_diff = abs(a[i] - a[i + 3])*180/np.pi
+                angle_diff = (abs(a[i] - a[i + 3])*180)/np.pi
                 angle_sum += angle_diff
 
-            ang = (1 / ((n / 3) - 1)) * angle_sum
+            ang = angle_sum / ((n / 3) - 1)
             
             angularity_values.append(ang)
         
@@ -207,11 +210,23 @@ class MainClass (object):
         
         average = np.round(np.average(angularity_array), 2)
         standard_dev = np.round(np.std(angularity_array), 2)
-        coefv = np.round(standard_dev/average, 2)
+        coefv = np.round(100*standard_dev/average, 2)
         
-        self.lResultsData.config(text=f"Average: {average} | Standard Dev.: {standard_dev} | Coef. of Variation: {coefv}")
+        self.lResultsData.config(text=f"Average: {average} | Standard Dev.: {standard_dev} | Coef. of Variation: {coefv}%")
 
         self.save(angularity_array, average, standard_dev, coefv)
+
+    def maior(self, contornos):
+        maior_contorno = None
+        maior_area = 0
+
+        for contorno in contornos:
+            area = cv2.contourArea(contorno)
+            if area > maior_area:
+                maior_area = area
+                maior_contorno = contorno
+
+        return maior_contorno
 
     def save(self, angularity, aver, std, cvar):
         arr = angularity.copy()
