@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import cv2
 import numpy as np
@@ -19,6 +20,7 @@ class MainClass (object):
         self.imgs = []
         self.binar_imgs = []
         self.sobel_images = []
+        self.vectors_images = []
 
         self.list_of_contours = []
         self.angles_of_contours = []
@@ -28,12 +30,15 @@ class MainClass (object):
         self.root.title('Angularity 2D tool')
         self.root.configure(bg = cor_bg)
 
+        self.check_exportimg_var =IntVar()
+
         self.canvas = Canvas(self.root, width=600, height=400, bg=cor_fg)
         self.fLoad = LabelFrame(self.root, bg=cor_bg, text='File')
         self.canvas.grid(row=0, column=0)
         self.fLoad.grid(row=0, column=1, sticky='N')
 
         self.ePath = Entry(self.fLoad, width=60, cursor='xterm')
+        self.cbExportimg = Checkbutton(self.fLoad, bg = cor_bg, text="Export Images", cursor='hand2', variable=self.check_exportimg_var, onvalue=1, offvalue=0)
         self.bLoad = Button(self.fLoad, width=10, text='Load images', cursor='hand2', command=self.load)
         self.bSegm = Button(self.fLoad, width=10, text='Segmentation', cursor='hand2', command=lambda:self.segment(self.imgs))
         self.bAngu = Button(self.fLoad, width=10, text='Angularity', cursor='hand2', command=lambda:self.angular(self.angles_of_contours))
@@ -42,15 +47,16 @@ class MainClass (object):
         self.lResultsData = Label(self.fLoad, text="Average: - | Standard Dev.: - | Coef. of Variation: -", bg=cor_bg)
 
         self.ePath.grid(row=0, column=0, padx=5, pady=5, columnspan=4)
-        self.bLoad.grid(row=1, column=0, padx=5, pady=5)
-        self.bSegm.grid(row=1, column=1, padx=5, pady=5)
-        self.bAngu.grid(row=1, column=2, padx=5, pady=5)
-        self.bReset.grid(row=1, column=3, padx=5, pady=5)
-        self.lResults.grid(row=2, column=0, columnspan=4)
-        self.lResultsData.grid(row=3, column=0, columnspan=4)
+        self.cbExportimg.grid(row=1, column=0, padx=5, pady=5, columnspan=4)
+        self.bLoad.grid(row=2, column=0, padx=5, pady=5)
+        self.bSegm.grid(row=2, column=1, padx=5, pady=5)
+        self.bAngu.grid(row=2, column=2, padx=5, pady=5)
+        self.bReset.grid(row=2, column=3, padx=5, pady=5)
+        self.lResults.grid(row=3, column=0, columnspan=4)
+        self.lResultsData.grid(row=4, column=0, columnspan=4)
 
         # self.ePath.insert(0, "C:/imgs_test_aggegate_scan")
-        self.ePath.insert(0, "C:/imgs_test_aggegate_scan/usaveis_sem_escala/super_flat/blue")
+        self.ePath.insert(0, "C:/imgs_test_aggegate_scan/ensaio_de_forma-sem_escala/JPG_files/1/blue")
 
         self.root.mainloop()
 
@@ -61,7 +67,7 @@ class MainClass (object):
 
         self.imgs = self.load_images_from_folder(self.path_folder_get)
 
-        self.just_to_show = cv2.cvtColor(self.imgs[0], cv2.COLOR_BGR2RGB)
+        self.vectors_images = self.imgs.copy()
 
         img_rgb = cv2.cvtColor(self.imgs[0].copy(), cv2.COLOR_BGR2RGB)
         img_copy = self.resize(img_rgb)
@@ -75,8 +81,13 @@ class MainClass (object):
         for filename in os.listdir(folder):
             img = cv2.imread(os.path.join(folder, filename))
             if img is not None:
-                images.append(img)
-        return images
+                images.append((filename, img))
+
+        # Ordenar a lista de imagens pelo valor numérico presente nos nomes dos arquivos
+        images.sort(key=lambda x: int(re.findall(r'\d+', x[0])[0]))
+
+        # Retornar apenas as imagens (removendo os nomes dos arquivos que foram usados apenas para ordenação)
+        return [img for _, img in images]
 
     def resize(self, img):
         global p
@@ -136,8 +147,6 @@ class MainClass (object):
             images.append(image_with_contours)
             # np.savetxt("C:/imgs_test_aggegate_scan/gradient_angle_vs.txt", c[0][:, 0], delimiter=";")
 
-        print('---------------------------')
-
         return contours
         
     def sobel_process(self, imgs, c):
@@ -145,6 +154,7 @@ class MainClass (object):
         i_vectors = []
 
         for i in range(len(imgs)):
+
             gradient_x = cv2.Sobel(imgs[i], cv2.CV_64F, 1, 0, ksize=5)
             gradient_y = cv2.Sobel(imgs[i], cv2.CV_64F, 0, 1, ksize=5)
             gradient_angle = np.arctan2(gradient_y, gradient_x)
@@ -178,13 +188,11 @@ class MainClass (object):
 
             for xi, yi, xf, yf in zip(xi_array, yi_array, xf_array, yf_array):
                 cv2.arrowedLine(mask, (xi, yi), (xf, yf), (255), 1)
-
-            if i == 0:
-                for xi, yi, xf, yf in zip(xi_array, yi_array, xf_array, yf_array):
-                    cv2.arrowedLine(self.just_to_show, (xi, yi), (xf, yf), (0, 0, 0), 1)
-                
+                cv2.arrowedLine(self.vectors_images[i], (xi, yi), (xf, yf), (0, 0, 0), 1)
 
             i_vectors.append(mask)
+
+        self.just_to_show = cv2.cvtColor(self.vectors_images[0], cv2.COLOR_BGR2RGB)
         
         return i_vectors, angles
 
@@ -238,6 +246,16 @@ class MainClass (object):
         path = str(self.ePath.get()) + "/angularity_results.txt"
         
         np.savetxt(path, arr4, delimiter=";")
+
+        if self.check_exportimg_var.get() == 1:
+            path_i = str(self.ePath.get()) + "/vectors_imags"
+            if not os.path.exists(path_i):
+                os.makedirs(path_i)
+
+            for i in range(len(self.vectors_images)):
+                name_i = path_i + "/" + f"{i+1}.jpg"
+                cv2.imwrite(name_i, self.vectors_images[i])
+
 
     def reset(self):
         os.execl(sys.executable, sys.executable, *sys.argv)
