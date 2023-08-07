@@ -27,7 +27,7 @@ class MainClass (object):
         self.angularity_of_contours = []
 
         self.root = Tk()
-        self.root.title('Angularity 2D tool')
+        self.root.title('GI Angularity 2D tool')
         self.root.configure(bg = cor_bg)
 
         self.check_exportimg_var =IntVar()
@@ -155,8 +155,8 @@ class MainClass (object):
 
         for i in range(len(imgs)):
 
-            gradient_x = cv2.Sobel(imgs[i], cv2.CV_64F, 1, 0, ksize=5)
-            gradient_y = cv2.Sobel(imgs[i], cv2.CV_64F, 0, 1, ksize=5)
+            gradient_x = cv2.Sobel(imgs[i], cv2.CV_64F, 1, 0, ksize=3)
+            gradient_y = cv2.Sobel(imgs[i], cv2.CV_64F, 0, 1, ksize=3)
             gradient_angle = np.arctan2(gradient_y, gradient_x)
             gradient_angle_graus = (np.round(gradient_angle*180/np.pi, 0)).astype(np.uint32)
 
@@ -243,12 +243,12 @@ class MainClass (object):
         arr3 = np.append(arr2, std)
         arr4 = np.append(arr3, cvar)
 
-        path = str(self.ePath.get()) + "/angularity_results.txt"
+        path = str(self.ePath.get()) + "/angularity_results_GI.txt"
         
         np.savetxt(path, arr4, delimiter=";")
 
         if self.check_exportimg_var.get() == 1:
-            path_i = str(self.ePath.get()) + "/vectors_imags"
+            path_i = str(self.ePath.get()) + "/GI_imags"
             if not os.path.exists(path_i):
                 os.makedirs(path_i)
 
