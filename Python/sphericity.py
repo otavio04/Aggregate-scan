@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.decomposition import PCA
 import math
 
-example = o3d.io.read_point_cloud('C:/imgs_test_aggegate_scan/ensaio_de_forma-sem_escala/PLY_files/8.ply')
+example = o3d.io.read_point_cloud('C:/imgs_test_aggegate_scan/ensaio_de_forma-sem_escala/PLY_files/101.ply')
 
 pts = np.asarray(example.points)
 

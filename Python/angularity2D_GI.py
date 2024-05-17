@@ -206,7 +206,8 @@ class MainClass (object):
 
             angle_sum = 0.0
             for i in range(n - 3):
-                angle_diff = (abs(a[i] - a[i + 3])*180)/np.pi
+                # angle_diff = (abs(a[i] - a[i + 3])*180)/np.pi
+                angle_diff = 180 - abs(((abs(a[i] - a[i + 3])*180)/np.pi) - 180)
                 angle_sum += angle_diff
 
             ang = angle_sum / ((n / 3) - 1)
