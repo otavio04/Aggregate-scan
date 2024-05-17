@@ -97,19 +97,22 @@ class MainClass(object):
 
 	def resize(self, img):
 		global p
-		width_img = int(img.shape[1])
 		height_img = int(img.shape[0])
+		width_img = int(img.shape[1])
 
-		width_canvas = self.canvas.winfo_width()
 		height_canvas = self.canvas.winfo_height()
+		width_canvas = self.canvas.winfo_width()
 
-		if (width_img - width_canvas) >= (height_img - height_canvas):
-			p = (width_canvas)/width_img
+		scale_h = height_canvas/height_img
+		scale_w = width_canvas/width_img
+
+		if scale_w < scale_h:
+			p = scale_w
 		else:
-			p = (height_canvas)/height_img
+			p = scale_h
 
-		width_r = int(img.shape[1]*p)
 		height_r = int(img.shape[0]*p)
+		width_r = int(img.shape[1]*p)
 		dim = (width_r, height_r)
 		img_r = cv2.resize(img.copy(), dim)
 		return img_r
@@ -135,8 +138,13 @@ class MainClass(object):
 			i_b_8uc1 = (i_b*255).astype('uint8')
 			#limiarização
 			ret, i_c_segment = cv2.threshold(i_b_8uc1,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+			#removendo ruido com findcontours
+			c, hier = cv2.findContours(i_c_segment, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+			largest_contour = max(c, key=cv2.contourArea)
+			black_image = np.zeros_like(i_c_segment)
+			cv2.drawContours(black_image, [largest_contour], -1, (255), thickness=cv2.FILLED)
 			#tapando buracos com filtro de mediana
-			i_seg_float32 = (i_c_segment.astype('float32'))/255
+			i_seg_float32 = (black_image.astype('float32'))/255
 			i_seg_blur = cv2.medianBlur(i_seg_float32, 5)
 			#copiando imagem original
 			img_bgr_new_b = ifor.copy()
