@@ -3,8 +3,9 @@ import numpy as np
 from sklearn.decomposition import PCA
 import math
 
-example = o3d.io.read_point_cloud('C:/imgs_test_aggegate_scan/ensaio_de_forma-sem_escala/PLY_files/101.ply')
-
+# example = o3d.io.read_point_cloud('C:/imgs_test_aggegate_scan/OCS/1 - N-4/1_1/3D/Textured_mesh_1.ply')
+example = o3d.io.read_point_cloud('C:/imgs_test_aggegate_scan/usaveis_sem_escala/5/3dzephyr/Textured_mesh_1.ply')
+print(f"N pontos: {len(example.points)}")
 pts = np.asarray(example.points)
 
 #Finding rotation matrix
