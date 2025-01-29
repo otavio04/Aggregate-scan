@@ -10,5 +10,15 @@
     <string name="str_folder">Folder</string>
     <string name="str_connect">Connect</string>
     <string name="str_about">About</string>
+    <string name="str_default">Default</string>
+    <string name="str_target_description">Target</string>
+
+    <string name="str_waiting">Waiting…</string>
+    <string name="str_sent">Sent!</string>
+    <string name="str_received">Received!</string>
+    <string name="str_listening">Listening…</string>
+    <string name="str_scan">Scan</string>
+    <string name="str_camera">Camera</string>
+    <string name="str_status">STATUS</string>
 
 </resources>

@@ -27,7 +27,6 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
 import androidx.camera.core.*
 import androidx.camera.view.PreviewView
 import com.example.aggregatescankt.databinding.ActivityMainBinding
@@ -57,6 +56,8 @@ class MainActivity : AppCompatActivity() {
     lateinit var list_view: ListView
     lateinit var save_view: EditText
     lateinit var t_folder: TextView
+    lateinit var t_statusscan: TextView
+    lateinit var t_statuscamera: TextView
 
     lateinit var listView: View
     lateinit var saveView: View
@@ -75,6 +76,14 @@ class MainActivity : AppCompatActivity() {
         viewBinding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(viewBinding.root)
 
+        // Set up the listeners for take photo and video capture buttons
+        cameraExecutor = Executors.newSingleThreadExecutor()
+
+        packageManager.takeIf { it.missingSystemFeature(PackageManager.FEATURE_BLUETOOTH) }?.also {
+            Toast.makeText(this, "Bluetooth not supported", Toast.LENGTH_SHORT).show()
+            finish()
+        }
+
         if (allPermissionsGranted()) {
             startBluetooth()
             startCamera()
@@ -86,7 +95,10 @@ class MainActivity : AppCompatActivity() {
             b_about = findViewById(R.id.btn_about)
             t_folder = findViewById(R.id.tv_folder)
 
-                saveView = layoutInflater.inflate(R.layout.folder_name, null)
+            t_statusscan = findViewById(R.id.tv_statusscan)
+            t_statuscamera = findViewById(R.id.tv_statuscamera)
+
+            saveView = layoutInflater.inflate(R.layout.folder_name, null)
             save_view = saveView.findViewById(R.id.edt_name_folder)
             listView = layoutInflater.inflate(R.layout.paired_devices, null)
             list_view = listView.findViewById(R.id.list_view_dialog)
@@ -95,23 +107,12 @@ class MainActivity : AppCompatActivity() {
                 position_list = position
             }
 
-
             b_connect.setOnClickListener { paired_devices() }
             b_folder.setOnClickListener { show_save_path() }
             b_about.setOnClickListener {  }
 
         } else {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS.toTypedArray(), REQUEST_CODE_PERMISSIONS)
-        }
-
-        // Set up the listeners for take photo and video capture buttons
-
-
-        cameraExecutor = Executors.newSingleThreadExecutor()
-
-        packageManager.takeIf { it.missingSystemFeature(PackageManager.FEATURE_BLUETOOTH) }?.also {
-            Toast.makeText(this, "Bluetooth not supported", Toast.LENGTH_SHORT).show()
-            finish()
         }
     }
 
@@ -143,6 +144,7 @@ class MainActivity : AppCompatActivity() {
     fun paired_devices() {
         if (allPermissionsGranted()) {
             val pairedDevices: Set<BluetoothDevice>? = bluetoothAdapter.bondedDevices
+            deviceName.clear() //clearing device list before adding all paired devices again
             pairedDevices?.forEach {
                 deviceName.add(it.name)
                 deviceHardwareAddress.add(it.address) //MAC Address
@@ -168,18 +170,9 @@ class MainActivity : AppCompatActivity() {
 
         list_view.adapter = adapter
 
-
         builder.setView(listView)
             .setTitle("Paired Devices")
             .setPositiveButton("Select", DialogInterface.OnClickListener { dialogInterface, i ->
-//                val device_choosed = paireds.elementAt(position_list)
-//                val uuids: Array<ParcelUuid>? = device_choosed.uuids
-//                if (uuids != null) {
-//                    for (uuid in uuids) {
-//                        Log.d("UUID", uuid.toString())
-//                    }
-//                }
-//                Toast.makeText(this@MainActivity, device_choosed, Toast.LENGTH_SHORT).show()
                 mDevice = paireds.elementAt(position_list)
                 ConnectThread(mDevice).start()
                 dialogInterface.dismiss()
@@ -201,6 +194,12 @@ class MainActivity : AppCompatActivity() {
         val connectedThread = myBluetoothService.ConnectedThread(myBluetoothSocket)
 
         connectedThread.start()
+
+        runOnUiThread {
+            t_statuscamera.setText(R.string.str_listening)
+            val cor_text = ContextCompat.getColor(this, R.color.txt_listening)
+            t_statuscamera.setTextColor(cor_text)
+        }
 
     }
 
@@ -326,9 +325,14 @@ class MainActivity : AppCompatActivity() {
                 val point = factory.createPoint(
                     viewBinding.viewFinder.width.toFloat()/2,
                     viewBinding.viewFinder.height.toFloat()/2,
-                    0.05F
+                    0.1F //antes era 0.05f (5% da altura ou largura da preview)
                 )
-                val action = FocusMeteringAction.Builder(point).build()
+                val action = FocusMeteringAction
+                    .Builder(point)
+                    .addPoint(point, FocusMeteringAction.FLAG_AF)
+                    .addPoint(point, FocusMeteringAction.FLAG_AE)
+                    .addPoint(point, FocusMeteringAction.FLAG_AWB)
+                    .build()
                 cameraControl.startFocusAndMetering(action)
 
                 //Toast.makeText(this, point.size.toString(), Toast.LENGTH_LONG).show()
@@ -392,7 +396,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         override fun run() {
-//            Toast.makeText(this@MainActivity, "entrou",Toast.LENGTH_SHORT).show()
+
             bluetoothAdapter.cancelDiscovery()
 
             try {

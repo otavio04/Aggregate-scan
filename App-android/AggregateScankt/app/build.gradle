@@ -4,11 +4,12 @@ plugins {
 }
 
 android {
+    namespace = "com.example.aggregatescankt"
     compileSdk 33
 
     defaultConfig {
         applicationId "com.example.aggregatescankt"
-        minSdk 21
+        minSdk 33
         targetSdk 33
         versionCode 1
         versionName "1.0"
