@@ -56,7 +56,6 @@ class MainActivity : AppCompatActivity() {
     lateinit var list_view: ListView
     lateinit var save_view: EditText
     lateinit var t_folder: TextView
-    lateinit var t_statusscan: TextView
     lateinit var t_statuscamera: TextView
 
     lateinit var listView: View
@@ -95,7 +94,6 @@ class MainActivity : AppCompatActivity() {
             b_about = findViewById(R.id.btn_about)
             t_folder = findViewById(R.id.tv_folder)
 
-            t_statusscan = findViewById(R.id.tv_statusscan)
             t_statuscamera = findViewById(R.id.tv_statuscamera)
 
             saveView = layoutInflater.inflate(R.layout.folder_name, null)
@@ -197,8 +195,7 @@ class MainActivity : AppCompatActivity() {
 
         runOnUiThread {
             t_statuscamera.setText(R.string.str_listening)
-            val cor_text = ContextCompat.getColor(this, R.color.txt_listening)
-            t_statuscamera.setTextColor(cor_text)
+            t_statuscamera.setTextColor(ContextCompat.getColor(this, R.color.txt_listening))
         }
 
     }
@@ -214,7 +211,10 @@ class MainActivity : AppCompatActivity() {
         val message = messageToArduino.toByteArray()
 
         Log.i("Test_info: ", message.toString(Charsets.UTF_8))
-
+        runOnUiThread {
+            t_statuscamera.setText(R.string.str_sending)
+            t_statuscamera.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.txt_sending))
+        }
         connectedThread.write(message)
     }
 
@@ -272,6 +272,9 @@ class MainActivity : AppCompatActivity() {
             object : ImageCapture.OnImageSavedCallback {
                 override fun onError(exc: ImageCaptureException) {
                     Log.e(TAG, "Photo capture failed: ${exc.message}", exc)
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        takePhoto()
+                    }, 1000) // Delay de 1 segundo antes de tentar novamente
                 }
 
                 override fun onImageSaved(output: ImageCapture.OutputFileResults){
@@ -447,6 +450,10 @@ class MainActivity : AppCompatActivity() {
                     val message = String(bytes, 0, numBytes, Charsets.UTF_8)
                     Log.i("Test_info: Receive ", message)
                     if (message.contains("xis")){
+                        runOnUiThread {
+                            t_statuscamera.setText(R.string.str_received)
+                            t_statuscamera.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.txt_received))
+                        }
                         takePhoto()
                     }else if (message.contains("status")){
                         messageToArduino = "Connected"
@@ -459,6 +466,10 @@ class MainActivity : AppCompatActivity() {
                     // Handle message of type MESSAGE_WRITE
                     val bytes = msg.obj as ByteArray
                     val numBytes = msg.arg1
+                    runOnUiThread {
+                        t_statuscamera.setText(R.string.str_sent)
+                        t_statuscamera.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.txt_sent))
+                    }
                     // Process the sent data
 //                    val s = bytes.joinToString(":") { String.format("%02X", it) }
 //                    Log.i("Test_info: Send ", bytes[1].toInt().toString())

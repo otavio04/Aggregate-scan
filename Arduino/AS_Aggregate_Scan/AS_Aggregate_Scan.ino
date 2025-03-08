@@ -306,7 +306,7 @@ void start_motor(){
 
   while(1){ 
     Serial.println("No while 1");
-
+  
     if(digitalRead(encoder)){
       Serial.println("Encoder lido");
       picture();   
@@ -315,7 +315,7 @@ void start_motor(){
       lcd.print(count);   
       count++;
 
-      if(count > 21){
+      if(count > 50){
         Serial.println("Terminou");
         digitalWrite(in1, HIGH);
         digitalWrite(in2, HIGH);
@@ -361,6 +361,7 @@ void picture(){
     digitalWrite(inm, HIGH);
     delay(1000);
     bth.println("{xis}");
+    delay(100);
     Serial.println("Tirou foto");
     String camera = "";
     while(1){
@@ -390,7 +391,6 @@ String bth_test(){
 
   while (1) {
     if(bth.available()){
-      bth.flush();
       status = "";
       for(int i = 0; i < bth.available(); i++){
         status += bth.readString();

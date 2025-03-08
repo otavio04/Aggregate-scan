@@ -13,6 +13,9 @@ const val MESSAGE_READ: Int = 0
 const val MESSAGE_WRITE: Int = 1
 const val MESSAGE_TOAST: Int = 2
 
+@Volatile
+private var isRunning = true // Flag para interromper a thread
+
 class MyBluetoothService(
 
     // handler that gets info from Bluetooth service
@@ -28,7 +31,7 @@ class MyBluetoothService(
             var numBytes: Int // bytes returned from read()
 
             // Keep listening to the InputStream until an exception occurs.
-            while (true) {
+            while (isRunning) {
                 // Read from the InputStream.
                 numBytes = try {
                     mmInStream.read(mmBuffer)
@@ -38,10 +41,8 @@ class MyBluetoothService(
                 }
 
                 // Send the obtained bytes to the UI activity.
-                val readMsg = handler.obtainMessage(
-                    MESSAGE_READ, numBytes, -1,
-                    mmBuffer
-                )
+                val readBytes = mmBuffer.copyOfRange(0, numBytes)
+                val readMsg = handler.obtainMessage(MESSAGE_READ, numBytes, -1, readBytes)
                 readMsg.sendToTarget()
             }
         }
@@ -64,18 +65,19 @@ class MyBluetoothService(
             }
 
             // Share the sent message with the UI activity.
-            val writtenMsg = handler.obtainMessage(
-                MESSAGE_WRITE, -1, -1, mmBuffer
-            )
+            val writtenMsg = handler.obtainMessage(MESSAGE_WRITE, -1, -1, bytes)
             writtenMsg.sendToTarget()
         }
 
         // Call this method from the main activity to shut down the connection.
         fun cancel() {
+            isRunning = false // Define a flag como falsa para interromper o loop
             try {
+                mmInStream.close()
+                mmOutStream.close()
                 mmSocket.close()
             } catch (e: IOException) {
-                Log.e(TAG, "Could not close the connect socket", e)
+                Log.e(TAG, "Could not close the streams or socket", e)
             }
         }
     }

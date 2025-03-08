@@ -98,44 +98,6 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/tv_scanstatus"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:text="@string/str_scan"
-        android:textStyle="bold"
-        android:textColor="@color/txt_white"
-        android:textSize="20sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_status" />
-
-    <TextView
-        android:id="@+id/tv_statusscan"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:text="@string/str_waiting"
-        android:textColor="@color/txt_white"
-        android:textSize="14sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_scanstatus"/>
-
-    <TextView
-        android:id="@+id/tc_camerastatus"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:text="@string/str_camera"
-        android:textStyle="bold"
-        android:textColor="@color/txt_white"
-        android:textSize="20sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_statusscan" />
-
-    <TextView
         android:id="@+id/tv_statuscamera"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -143,8 +105,8 @@
         android:layout_marginTop="8dp"
         android:text="@string/str_waiting"
         android:textColor="@color/txt_white"
-        android:textSize="14sp"
+        android:textSize="18sp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tc_camerastatus" />
+        app:layout_constraintTop_toBottomOf="@id/tv_status" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
