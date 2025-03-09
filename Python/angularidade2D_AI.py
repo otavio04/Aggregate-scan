@@ -88,7 +88,7 @@ class MainClass(object):
         self.canvas.create_image(0, 0, anchor="nw", image=photo, tag='img')
 
     def cycle(self, folders, i=0):
-        if (i >= len(folders) - 1) or (i >= 3):
+        if (i >= len(folders)):
             self.save(self.results, self.abstract)
             self.root.bell()
             return  # Para quando todas as pastas forem processadas
