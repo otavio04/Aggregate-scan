@@ -3,6 +3,7 @@ import re
 import sys
 import cv2
 import numpy as np
+import pandas as pd
 from tkinter import *
 from PIL import ImageTk, Image
 import matplotlib.pyplot as plt
@@ -16,9 +17,15 @@ class MainClass(object):
 
         self.resto = 5
 
+        self.folders_blue = []
+        self.results = []
+        self.abstract = []
         self.imgs = []
         self.rgb_imgs = []
         self.ai_images = []
+
+        self.folder_of_the_time = ""
+        self.number_foler_of_the_time = 0
 
         self.root = Tk()
         self.root.title('AI Angularity 2D tool')
@@ -34,7 +41,7 @@ class MainClass(object):
         self.ePath = Entry(self.fLoad, width=60, cursor='xterm')
         self.cbExportimg = Checkbutton(self.fLoad, bg = cor_bg, text="Export Images", cursor='hand2', variable=self.check_exportimg_var, onvalue=1, offvalue=0)
         self.bLoad = Button(self.fLoad, width=10, text='Load images', cursor='hand2', command=self.load)
-        self.bAngu = Button(self.fLoad, width=10, text='Angularity', cursor='hand2', command=lambda:self.segment(self.imgs))
+        self.bAngu = Button(self.fLoad, width=10, text='Angularity', cursor='hand2', command=lambda:self.cycle(self.folders_blue))
         self.bReset = Button(self.fLoad, width = 10, text = "Reset", cursor='hand2', command = self.reset, fg="red")
         self.lResults = Label(self.fLoad, text='RESULTS', bg=cor_bg)
         self.lResultsData = Label(self.fLoad, text="Average: - | Standard Dev.: - | Coef. of Variation: -", bg=cor_bg)
@@ -48,26 +55,58 @@ class MainClass(object):
         self.lResultsData.grid(row=4, column=0, columnspan=3)
 
         # self.ePath.insert(0, "C:/imgs_test_aggegate_scan")
-        self.ePath.insert(0, "C:/imgs_test_aggegate_scan/ensaio_de_forma-sem_escala/JPG_files/1/blue")
+        self.ePath.insert(0, "C:/Banco de Dados")
 
         self.root.mainloop()
 
     def load(self):
 
-        self.path_folder_get = str(self.ePath.get())
+        base_path = str(self.ePath.get())
+        
+        self.folders_blue = []
 
-        self.imgs = self.load_images_from_folder(self.path_folder_get)
+        for folder in os.listdir(base_path):
+            folder_path = os.path.join(base_path, folder)
+            blue_folder = os.path.join(folder_path, "blue")
 
-        for i in self.imgs:
-            j = cv2.cvtColor(i, cv2.COLOR_BGR2RGB)
-            self.rgb_imgs.append(j)
+            if os.path.isdir(blue_folder):
+                self.folders_blue.append(blue_folder)
 
-        img_rgb = cv2.cvtColor(self.imgs[0].copy(), cv2.COLOR_BGR2RGB)
+        first_img_name = os.listdir(self.folders_blue[0])[0]
+        first_img_path = os.path.join(self.folders_blue[0], first_img_name)
+        first_img = cv2.imread(first_img_path, cv2.IMREAD_UNCHANGED)
+
+        self.show_img(first_img)
+
+    def show_img(self, image):
+        self.canvas.delete('all')
+        img_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         img_copy = self.resize(img_rgb)
         image_pil = Image.fromarray(img_copy)
         photo = ImageTk.PhotoImage(image_pil)
         self.canvas.photo = photo
         self.canvas.create_image(0, 0, anchor="nw", image=photo, tag='img')
+
+    def cycle(self, folders, i=0):
+        if (i >= len(folders) - 1) or (i >= 3):
+            self.save(self.results, self.abstract)
+            self.root.bell()
+            return  # Para quando todas as pastas forem processadas
+
+        folder = folders[i]
+        self.folder_of_the_time = os.path.basename(os.path.dirname(folder))
+        self.number_foler_of_the_time = i + 1
+
+        img = []
+        img = self.load_images_from_folder(folder)
+        self.imgs = []
+
+        if img:
+            self.imgs = img.copy()
+            self.show_img(img[0])  # Mostra a primeira imagem da pasta
+            self.segment(img)
+
+        self.root.after(250, self.cycle, folders, i + 1)  # Chama a próxima iteração depois de 500ms
 
     def load_images_from_folder(self, folder):
         images = []
@@ -84,19 +123,22 @@ class MainClass(object):
 
     def resize(self, img):
         global p
-        width_img = int(img.shape[1])
         height_img = int(img.shape[0])
+        width_img = int(img.shape[1])
 
-        width_canvas = self.canvas.winfo_width()
         height_canvas = self.canvas.winfo_height()
+        width_canvas = self.canvas.winfo_width()
 
-        if (width_img - width_canvas) >= (height_img - height_canvas):
-            p = (width_canvas)/width_img
+        scale_h = height_canvas/height_img
+        scale_w = width_canvas/width_img
+
+        if scale_w < scale_h:
+            p = scale_w
         else:
-            p = (height_canvas)/height_img
+            p = scale_h
 
-        width_r = int(img.shape[1]*p)
         height_r = int(img.shape[0]*p)
+        width_r = int(img.shape[1]*p)
         dim = (width_r, height_r)
         img_r = cv2.resize(img.copy(), dim)
         return img_r
@@ -170,17 +212,14 @@ class MainClass(object):
         standard_dev = np.round(np.std(angularity_array), 2)
         coefv = np.round(100*standard_dev/average, 2)
 
-        self.canvas.delete('all')
-        img_show = cv2.cvtColor(self.ai_images[0], cv2.COLOR_BGR2RGB)
-        img_copy = self.resize(img_show)
-        image_pil = Image.fromarray(img_copy)
-        photo = ImageTk.PhotoImage(image_pil)
-        self.canvas.photo = photo
-        self.canvas.create_image(0, 0, anchor="nw", image=photo, tag='img')
-        
+        # self.show_img(self.ai_images[self.number_foler_of_the_time])
+        self.lResults.config(text = f"RESULTS FOR {self.folder_of_the_time}")
         self.lResultsData.config(text=f"Average: {average} | Standard Dev.: {standard_dev} | Coef. of Variation: {coefv}%")
 
-        self.save(angularity_array, average, standard_dev, coefv)
+        self.results.append([f"particle {self.folder_of_the_time}"])
+        self.results.extend([[num] for num in angularity_array])
+
+        self.abstract.append(np.array([str(self.folder_of_the_time), average, standard_dev, coefv], dtype=object))
 
 
     def major_contour(self, c):
@@ -246,16 +285,19 @@ class MainClass(object):
         
         self.ai_images.append(img)
 
-    def save(self, angularity, aver, std, cvar):
-        arr = angularity.copy()
-        arr1 = np.append(arr, 1000)
-        arr2 = np.append(arr1, aver)
-        arr3 = np.append(arr2, std)
-        arr4 = np.append(arr3, cvar)
+    def save(self, angularity_results, abstract):
+        data_abstract = np.array(abstract)
+        data = np.array(angularity_results)
 
-        path = str(self.ePath.get()) + "/angularity_results_AI.txt"
-        
-        np.savetxt(path, arr4, delimiter=";")
+        # Criar DataFrame
+        df = pd.DataFrame(data, columns=["Results"])
+        df_abstract = pd.DataFrame(data_abstract, columns=["Particle", "Average", "Std", "CV"])
+
+        path = str(self.ePath.get()) + "/angularity_results_AI.csv"
+        path_abstract = str(self.ePath.get()) + "/angularity_abstract_AI.csv"
+
+        df.to_csv(path, index=False, sep=";")
+        df_abstract.to_csv(path_abstract, index=False, sep=";")
 
         if self.check_exportimg_var.get() == 1:
             path_i = str(self.ePath.get()) + "/AI_imags"
@@ -267,6 +309,8 @@ class MainClass(object):
                 cv2.imwrite(name_i, self.ai_images[i])
 
     def reset(self):
+        # self.root.destroy()  # Fecha a janela atual
+        # self.__init__()  # Chama o inicializador novamente
         os.execl(sys.executable, sys.executable, *sys.argv)
 
 if __name__ == '__main__':
