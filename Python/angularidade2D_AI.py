@@ -253,7 +253,7 @@ class MainClass(object):
             angulos.append(angulo_arredondado)
 
         # Imprimir os raios a cada 5 graus (altere o ultimo parametro do range para o número de graus entre os raios)
-        for i in range(-180, 180, 1):
+        for i in np.arange(-180, 180, 0.5):
             ang = min(angulos, key=lambda x: abs(x-i))
             rai = raios[angulos.index(ang)]
             raios_angulos_5.append([ang, rai])
